@@ -388,3 +388,60 @@ state에 관해 꼭 알아야할 3가지가 있다.
 일반적으로 이를 하향식 또는 단방향식 데이터 흐름이라고 한다. 모든 state는 항상 특정한 컴포넌트가 소유하고 있으며 그 state로부터 파생된 UI 또는 데이터는 오직 자신의 아래에 있는 컴포넌트에만 영향을 미친다.
 
 따라서 같은 종류의 컴포넌트가 여러개 생성되었다라도 모두 독립적이다.
+
+## Event 처리하기
+
+React에서 기본 동작을 방지하기 위해선 반드시 preventDefault를 명시적으로 호출해야 한다. 이때 기본 동작을 방지한다는 것은 해당 태그에 등록된 기본 이벤트를 실행하지 않으며 전파도 막는다는 것이다.
+
+```
+class Toggle extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {isToggleOn: true};
+
+    // 콜백에서 `this`가 작동하려면 아래와 같이 바인딩 해주어야 합니다.
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  handleClick() {
+    this.setState(state => ({
+      isToggleOn: !state.isToggleOn
+    }));
+  }
+
+  render() {
+    return (
+      <button onClick={this.handleClick}>
+        {this.state.isToggleOn ? 'ON' : 'OFF'}
+      </button>
+    );
+  }
+}
+
+ReactDOM.render(
+  <Toggle />,
+  document.getElementById('root')
+);
+```
+
+위 코드에서 handleClick 메서드 내에서 this를 사용하기 위해 bind(this)를 해주었다.
+
+만약 이게 불편하다면 퍼블릭 클래스 필드 문법을 사용해 콜백을 올바르게 바인딩할 수 있다.
+
+```
+class LoggingButton extends React.Component {
+  // 이 문법은 `this`가 handleClick 내에서 바인딩되도록 합니다.
+  // 주의: 이 문법은 *실험적인* 문법입니다.
+  handleClick = () => {
+    console.log('this is:', this);
+  }
+
+  render() {
+    return (
+      <button onClick={this.handleClick}>
+        Click me
+      </button>
+    );
+  }
+}
+```
