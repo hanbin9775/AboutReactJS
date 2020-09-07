@@ -311,7 +311,7 @@ timerID 같이 데이터 흐름 안에 포함되지 않는 어떤 항목을 보�
 
 이때 timerID에 할당된 setInterval 함수는 1초마다 tick() 메서드를 호출한다.
 
-tick() 메서드는 setState() 메서드를 호출하는데 React는 setState() 메서드가 호출될 때마다 state가 변경된 것을 인지하고 화면에 표시될 내용을 출력하기 위해 render() 메서드를 다시 호출한다. 이 때 render() 메서드 안의 this.state.data가 달라지고 렌더링 출력값은 업데이트된 시각을 포함한다. React는 이에 따라 DOM 업데이트한다.
+tick() 메서드는 setState() 메서드를 호출하는데 <strong>React는 setState() 메서드가 호출될 때마다 state가 변경된 것을 인지하고 화면에 표시될 내용을 출력하기 위해 render() 메서드를 다시 호출한다.</strong> 이 때 render() 메서드 안의 this.state.data가 달라지고 렌더링 출력값은 업데이트된 시각을 포함한다. React는 이에 따라 DOM 업데이트한다.
 
 Clock 컴포넌트가 DOM으로부터 한 번이라도 삭제된 적이 있다면 React는 타이머를 멈추기 위해 componentWillUnmount() 생명주기 메서드로 호출한다. 
 
@@ -445,3 +445,192 @@ class LoggingButton extends React.Component {
   }
 }
 ```
+
+## 조건부 렌더링
+
+리액트는 if나 조건부 연산자와 같은 JavaScript 연산자를 지원한다.
+
+```
+function Mailbox(props) {
+  const unreadMessages = props.unreadMessages;
+  return (
+    <div>
+      <h1>Hello!</h1>
+      {unreadMessages.length > 0 &&
+        <h2>
+          You have {unreadMessages.length} unread messages.
+        </h2>
+      }
+    </div>
+  );
+}
+
+const messages = ['React', 'Re: React', 'Re:Re: React'];
+ReactDOM.render(
+  <Mailbox unreadMessages={messages} />,
+  document.getElementById('root')
+);
+```
+
+위와 같이 && 연산자로 더 짧은 구문을 사용할 수도 있다. 
+
+## 리스트와 키
+
+```
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) =>
+    <li>{number}</li>
+  );
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById('root')
+);
+```
+
+위 코드를 실행하면 리스트의 각 항목에 key를 넣어야 한다는 경고가 표시된다. key는 엘리먼트 리스트를 만들 때 포함해야 하는 특수한 문자열 어트리뷰트이다.
+
+위 문제는 다음과 같이 해결할 수 있다.
+
+```
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) =>
+    <li key={number.toString()}>{number}</li>
+  );
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById('root')
+);
+```
+
+왜 key 어트리뷰트가 필요한 걸까?
+
+key는 React가 어떤 항목을 변경, 추가 또는 삭제할지 식별하는 것을 돕는다. key는 엘리먼트에 안정적인 고유성을 부여하기 위해 배열 내부의 엘리먼트에 지정해야 하는 것이다.
+
+```
+const todoItems = todos.map((todo) =>
+  <li key={todo.id}>
+    {todo.text}
+  </li>
+);
+
+const todoItems = todos.map((todo, index) =>
+  // Only do this if items have no stable IDs
+  <li key={index}>
+    {todo.text}
+  </li>
+);
+```
+
+데이터의 id 값을 사용하는 것이 일반적이지만 id 값이 없을 때는 index를 key로 사용하기도 한다. 하지만 권장하지는 않는다.
+
+이는 항목의 순서가 바뀔 수 있는 경우 성능이 저하되거나 컴포넌트의 state와 관련된 문제가 발생할 수 있다. 
+
+```
+function ListItem(props) {
+  // 맞습니다! 여기에는 key를 지정할 필요가 없습니다.
+  return <li>{props.value}</li>;
+}
+
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) =>
+    // 맞습니다! 배열 안에 key를 지정해야 합니다.
+    <ListItem key={number.toString()} value={number} />
+  );
+  return (
+    <ul>
+      {listItems}
+    </ul>
+  );
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById('root')
+);
+```
+
+충분히 헷갈릴 수 있는 상황의 코드이다. key가 필요한 엘리먼트를 잘 알아둬야 한다.
+
+key는 전역에서 고유할 필요는 없다. 두 개의 다른 배열을 만들 때 동일한 key를 사용할 수 있다.
+
+```
+function Blog(props) {
+  const sidebar = (
+    <ul>
+      {props.posts.map((post) =>
+        <li key={post.id}>
+          {post.title}
+        </li>
+      )}
+    </ul>
+  );
+  const content = props.posts.map((post) =>
+    <div key={post.id}>
+      <h3>{post.title}</h3>
+      <p>{post.content}</p>
+    </div>
+  );
+  return (
+    <div>
+      {sidebar}
+      <hr />
+      {content}
+    </div>
+  );
+}
+
+const posts = [
+  {id: 1, title: 'Hello World', content: 'Welcome to learning React!'},
+  {id: 2, title: 'Installation', content: 'You can install React from npm.'}
+];
+ReactDOM.render(
+  <Blog posts={posts} />,
+  document.getElementById('root')
+);
+```
+
+다음은 map() 함수를 사용해 중괄호 안에 모든 표현식을 포함 시키는 방식이다.
+
+```
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) =>
+    <ListItem key={number.toString()}
+              value={number} />
+  );
+  return (
+    <ul>
+      {listItems}
+    </ul>
+  );
+}
+function NumberList(props) {
+  const numbers = props.numbers;
+  return (
+    <ul>
+      {numbers.map((number) =>
+        <ListItem key={number.toString()}
+                  value={number} />
+      )}
+    </ul>
+  );
+}
+```
+
+어떤 방식이 더 가독성이 좋은가는 개발자 스스로가 판단해서 결정해야한다.
